@@ -19,3 +19,9 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* body {
+  background-color: #1e1e2f;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+} */

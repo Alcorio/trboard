@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "My trboard",
-  description: "A demo dashboard application",
+  description: "A demo trboard application",
 };
 
 // 用于定义页面的根布局
@@ -23,7 +23,8 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+          {children}
+        
       </body>
     </html>
   );
