@@ -1,14 +1,17 @@
 import Sidebar from "@/components/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function DashboardLayout({ children }) {
   return (
     <div className="flex h-screen">
       <Sidebar />
-      <main className="flex-1 p-6">{children}</main>
-     {/* // <div className="flex-1 bg-gray-100 p-4">{children}</div> */}
+      <TooltipProvider>
+        <main className="flex-1 p-6">{children}</main>
+      </TooltipProvider>
     </div>
   );
 }
+
 // app/dashboard/layout.js
 // export default function DashboardLayout({ children }) {
 //     return (

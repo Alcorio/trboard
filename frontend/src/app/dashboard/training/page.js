@@ -16,6 +16,48 @@ export default function TrainingPage() {
 
   const [uploadMessage, setUploadMessage] = useState(""); // 上传提示信息
 
+  // 上传函数
+  const uploadToServer = async (files, type) => {
+    const formData = new FormData();
+    const isMulti = files.length > 1;
+  
+    for (const file of files) {
+      if (isMulti) {
+        formData.append("files", file);
+        formData.append("description[]", ""); // 多文件版本
+      } else {
+        formData.append("file", file);
+      }
+    }
+  
+    if (!isMulti) {
+      formData.append("description", ""); // 单文件版本
+    }
+  
+    formData.append("type", type);
+  
+    try {
+      const res = await fetch(
+        isMulti ? "/api/protected/uploadfiles" : "/api/protected/uploadfile",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: formData,
+        }
+      );
+  
+      if (!res.ok) throw new Error("上传失败！");
+      const result = await res.json();
+      return { success: true, message: result.message || "上传成功" };
+    } catch (err) {
+      console.error(err);
+      return { success: false, message: err.message };
+    }
+  };
+  
+
   // 验证文件类型
   const validateFileType = (file, allowedTypes) => {
     const fileExtension = file.name.split('.').pop().toLowerCase();
@@ -49,54 +91,81 @@ export default function TrainingPage() {
   };
 
   // 单文件上传
-  const handleSingleFileUpload = (e, type) => {
+  const handleSingleFileUpload = async (e, type) => {
     clearOutput(type); // 每次上传前清屏
     const file = e.target.files[0];
-    if (file) {
+
+    if (!file) return;
+    const allowedTypes = type === "script" ? ["py", "exe"] : ["csv", "txt", "jpg", "png", "zip", "rar", "json", "jsonl"];
+    if (!validateFileType(file, allowedTypes)) {
+      setUploadMessage("上传失败！文件类型不支持。");
+      return;
+    }
+
+    const { success, message } = await uploadToServer([file], type);
+
+    if (success) {
       if (type === "script") {
-        if (validateFileType(file, ["py", "exe"])) {
-          setUploadedScripts([file.name]);
-          setScriptCount(1);
-          setUploadMessage(`${file.name} 脚本上传成功！`);
-        } else {
-          setUploadMessage("上传失败！请上传 .py 或 .exe 文件。");
-        }
-      } else if (type === "data") {
-        if (validateFileType(file, ["csv", "txt", "jpg", "png", "zip", "rar"])) {
-          setUploadedData([{ name: file.name, url: URL.createObjectURL(file) }]);
-          setDataCount(1);
-          setUploadMessage(`${file.name} 数据上传成功！`);
-        } else {
-          setUploadMessage("上传失败！请上传 .csv, .txt, .jpg, .png, .zip 或 .rar 文件。");
-        }
+        setUploadedScripts([file]);
+        setScriptCount(1);
+      } else {
+        setUploadedData([{ name: file.name, url: URL.createObjectURL(file) }]);
+        setDataCount(1);
+        
       }
     }
+
+    setUploadMessage(message);
+    
   };
 
   // 多文件上传
-  const handleMultipleFilesUpload = (e, type) => {
+  const handleMultipleFilesUpload = async (e, type) => {
     clearOutput(type); // 每次上传前清屏
     const files = Array.from(e.target.files);
-    const allowedTypes = type === "script" ? ["py", "exe"] : ["csv", "txt", "jpg", "png", "zip", "rar"];
+    const allowedTypes = type === "script" ? ["py", "exe"] : ["csv", "txt", "jpg", "png", "zip", "rar", "json", "jsonl"];
     const validFiles = files.filter((file) => validateFileType(file, allowedTypes));
-
-    if (validFiles.length) {
+    
+    if (validFiles.length === 0) {
+      setUploadMessage("未上传任何有效文件！");
+      return;
+    }
+  
+    const { success, message } = await uploadToServer(validFiles, type);
+  
+    if (success) {
       if (type === "script") {
-        setUploadedScripts(validFiles.map((file) => file.name));
+        setUploadedScripts(validFiles);
         setScriptCount(validFiles.length);
-        setUploadMessage(`共 ${validFiles.length} 个脚本上传成功！`);
-      } else if (type === "data") {
+      } else {
         const uploaded = validFiles.map((file) => ({
           name: file.name,
           url: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
         }));
         setUploadedData(uploaded);
         setDataCount(validFiles.length);
-        setUploadMessage(`共 ${validFiles.length} 个数据上传成功！`);
       }
-    } else {
-      setUploadMessage("未上传任何有效文件！");
     }
+  
+    setUploadMessage(message);
+
+    // if (validFiles.length) {
+    //   if (type === "script") {
+    //     setUploadedScripts(validFiles.map((file) => file.name));
+    //     setScriptCount(validFiles.length);
+    //     setUploadMessage(`共 ${validFiles.length} 个脚本上传成功！`);
+    //   } else if (type === "data") {
+    //     const uploaded = validFiles.map((file) => ({
+    //       name: file.name,
+    //       url: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
+    //     }));
+    //     setUploadedData(uploaded);
+    //     setDataCount(validFiles.length);
+    //     setUploadMessage(`共 ${validFiles.length} 个数据上传成功！`);
+    //   }
+    // } else {
+    //   setUploadMessage("未上传任何有效文件！");
+    // }
   };
 
   const renderFiles = (files) => {

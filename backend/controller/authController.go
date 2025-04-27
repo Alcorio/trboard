@@ -1,9 +1,10 @@
 package controller
 
 import (
-	"ginboard/service"
-	"ginboard/utils"
 	"net/http"
+	"strconv"
+	"trboard/service"
+	"trboard/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,7 +34,9 @@ func (controller *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	token, _ := utils.GenerateToken(user.Username)
+	// token, _ := utils.GenerateToken(user.Username)
+	token, _ := utils.GenerateToken(user.Username, strconv.Itoa(user.ID))
+
 	// c.SetCookie("auth_token", "user_secure_token", 3600, "/", "localhost", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
 }

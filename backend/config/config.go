@@ -5,24 +5,28 @@ import (
 	"fmt"
 	"log"
 
-	"ginboard/model"
+	"github.com/spf13/viper"
+
+	"trboard/model"
 
 	_ "github.com/lib/pq"
 )
 
-var (
-	DB_USER     = "postgres"
-	DB_PASSWORD = "123456"
-	DB_NAME     = "trboardb"
-	DB_HOST     = "localhost"
-	DB_PORT     = "5432"
-)
+func InitConfig() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("./config")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("读取配置失败: %w", err))
+	}
+	fmt.Println("初始化配置文件成功")
+}
 
 // InitDB 初始化数据库连接并检查表结构
 func InitDB() *sql.DB {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
-	db, err := sql.Open("postgres", connStr)
+	dsn := viper.GetString("database.dsn")
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
@@ -73,4 +77,38 @@ func initDBSchema(db *sql.DB) {
 	} else {
 		fmt.Println("Users table already initialized.")
 	}
+
+	// 初始化上传表
+	query_uploads := `
+	CREATE TABLE IF NOT EXISTS uploads (
+		id              SERIAL PRIMARY KEY,
+		file_id UUID    DEFAULT gen_random_uuid(),
+		user_id         INT REFERENCES users(id) ON DELETE CASCADE,
+		name            TEXT NOT NULL,
+		type            TEXT NOT NULL,
+		description     TEXT,
+		path            TEXT NOT NULL,
+		is_enabled      BOOLEAN DEFAULT false,
+		created_at      TIMESTAMP,
+		updated_at      TIMESTAMP
+	);
+	`
+	if _, err := db.Exec(query_uploads); err != nil {
+		log.Fatalf("Failed to initialize uploads table: %v", err)
+	}
+
+	// 增加表的列
+	_, err := db.Exec(`ALTER TABLE uploads ADD COLUMN IF NOT EXISTS file_id UUID DEFAULT gen_random_uuid();`) // 单引号优于双引号 后者还需要转义
+	if err != nil {
+		log.Fatalf("添加新列失败:%v", err)
+	}
+
+}
+
+func GetBaseDir() string {
+	return viper.GetString("basedir")
+}
+
+func GetUploadir() string {
+	return viper.GetString("uploadir")
 }

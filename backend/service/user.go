@@ -2,7 +2,7 @@ package service
 
 import (
 	"database/sql"
-	"ginboard/model"
+	"trboard/model"
 )
 
 type UserRepository struct {
@@ -22,3 +22,5 @@ func (repo *UserRepository) FindByUsername(username string) (*model.User, error)
 	}
 	return &user, nil
 }
+
+// func (repo *UserRepository) InsertUpload()

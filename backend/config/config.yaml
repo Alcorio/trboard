@@ -1,0 +1,4 @@
+database:
+  dsn: "postgres://postgres:123456@localhost:5432/trboardb?sslmode=disable"
+basedir: "F:/workspace/trboard"
+uploadir: "F:/workspace/trboard/tmp/uploads"

@@ -2,12 +2,12 @@ package router
 
 import (
 	"database/sql"
-	"ginboard/controller"
-	"ginboard/middlewares"
 	"net/http"
+	"trboard/controller"
+	"trboard/middlewares"
 
-	// "ginboard/repositories"
-	"ginboard/service"
+	// "trboard/repositories"
+	"trboard/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +15,9 @@ import (
 func RegisterRoutes(r *gin.Engine, db *sql.DB) {
 	userRepo := service.NewUserRepository(db)
 	authService := service.NewAuthService(userRepo)
+	uploadService := service.NewUploadService(userRepo)
 	authController := controller.NewAuthController(authService)
+	uploadController := controller.NewUploadController(uploadService)
 
 	api := r.Group("/api")
 	{
@@ -28,6 +30,10 @@ func RegisterRoutes(r *gin.Engine, db *sql.DB) {
 				username := c.MustGet("username").(string) // 获取jwt中间件解析出的用户名
 				c.JSON(http.StatusOK, gin.H{"message": "Welcome " + username})
 			})
+			protected.POST("/uploadfile", uploadController.Uploadfile)           // 上传单文件
+			protected.POST("/uploadfiles", uploadController.Uploadfiles)         // 上传多文件
+			protected.GET("/uploads", uploadController.GetUserUploads)           // 获取当前用户上传列表
+			protected.DELETE("/uploads/:file_id", uploadController.DeleteUpload) // 删除fileid文件
 		}
 	}
 }

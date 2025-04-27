@@ -68,8 +68,12 @@ export default function Sidebar({ onMenuClick }) {
       ],
     },
     {
-      label: "数据管理",
-      path: "/dashboard/data",
+      label: "文件管理",
+      submenu: [
+        { label: "上传管理", path: "/dashboard/data/upload" },
+        { label: "样本选择", path: "/dashboard/data/select" },
+        { label: "数据质量报告", path: "/dashboard/data/report" },
+      ],
     },
   ];
 

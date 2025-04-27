@@ -11,12 +11,14 @@ var jwtSecret = []byte("my_secret_key")
 
 type Claims struct {
 	Username string `json:"username"`
+	Userid   string `json:"userid"`
 	jwt.StandardClaims
 }
 
-func GenerateToken(username string) (string, error) {
+func GenerateToken(username string, userid string) (string, error) {
 	claims := Claims{
 		Username: username,
+		Userid:   userid,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(2 * time.Hour).Unix(),
 		},
@@ -25,13 +27,13 @@ func GenerateToken(username string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-func ValidateToken(tokenString string) (string, error) {
+func ValidateToken(tokenString string) (string, string, error) {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
 	if err != nil || !token.Valid {
-		return "", errors.New("invalid token")
+		return "", "", errors.New("invalid token")
 	}
-	return claims.Username, nil
+	return claims.Username, claims.Userid, nil
 }

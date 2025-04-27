@@ -2,8 +2,8 @@ package service
 
 import (
 	"errors"
-	"ginboard/model"
-	// "ginboard/service"
+	"trboard/model"
+	// "trboard/service"
 )
 
 type AuthService struct {
