@@ -4,6 +4,7 @@ import (
 	// "database/sql"
 	// "fmt"
 	"errors"
+	"log"
 	"net/http"
 	"trboard/model"
 	"trboard/service"
@@ -141,4 +142,64 @@ func (uc *UploadController) GetUserUploads(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": uploads})
+}
+
+func (uc *UploadController) UpdateUpload(c *gin.Context) {
+	fileID := c.Param("file_id")
+	// fmt.Println("检测file_id", fileID)
+	userID := utils.GetUserID(c)
+	if fileID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "miss file_id"})
+		return
+	}
+
+	input := &model.UploadUpdate{}
+
+	if err := c.ShouldBindJSON(input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
+	input.UserID = userID
+	input.FileID = fileID
+
+	if err := uc.UploadService.UpdateUpload(input); err != nil {
+		if errors.Is(err, model.ErrRecordNotFound) { // 改为返回404
+			c.JSON(http.StatusNotFound, gin.H{"error": "no record"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Upload updated successfully"})
+}
+
+func (uc *UploadController) InitIndex(c *gin.Context) {
+	fileID := c.Param("file_id")
+	userID := utils.GetUserID(c)
+
+	log.Println("成功获取fileid:", fileID)
+	if fileID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "miss file_id"})
+		return
+	}
+
+	if err := uc.UploadService.InitIndex(userID, fileID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Init index successfully"})
+}
+
+func (uc *UploadController) DeleteAllIndex(c *gin.Context) {
+	fileID := c.Param("file_id")
+	userID := utils.GetUserID(c)
+	log.Println("成功获取到fileid:", fileID)
+
+	if err := uc.UploadService.DeleteAllIndex(userID, fileID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message:": "delete index successful"})
 }

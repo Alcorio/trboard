@@ -6,6 +6,7 @@
 "use client";  // 客户端代码，输出日志只会输出到浏览器
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { deleteFromCache, clearAllCache } from "@/components/indexdb/db"; // 引入
 
 export default function DashboardHome() {
 
@@ -24,18 +25,38 @@ export default function DashboardHome() {
         localStorage.removeItem("token");
         router.push("/login");
     }
+
+    const handleClearCache = async () => {
+      try {
+        await clearAllCache(); // 👈 清除所有缓存
+        alert("已清除所有可视化缓存！");
+      } catch (err) {
+        console.error("清除缓存失败", err);
+        alert("缓存清除失败！");
+      }
+    };
+  
     
     return (
-        <div className="relative flex flex-col items-center justify-center h-screen bg-gray-100">
-          <h1 className="text-3xl font-bold mb-6"> Welcome to trboard!</h1>
+      <div className="relative flex flex-col items-center justify-center h-screen bg-gray-100">
+        <h1 className="text-3xl font-bold mb-6">Welcome to trboard!</h1>
+        
+        <div className="space-x-3 absolute top-3 right-3">
+          <button
+            onClick={handleClearCache}
+            className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+          >
+            清除缓存
+          </button>
           <button
             onClick={handleLogout}
-            className="absolute top-3 right-3 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
           >
             Logout
           </button>
         </div>
-      );
+      </div>
+    );
    // return <h1 className="text-3xl font-bold">Welcome to the trboard!</h1>;
 }
 /*

@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 
 export default function TrainingPage() {
@@ -168,6 +168,52 @@ export default function TrainingPage() {
     // }
   };
 
+
+  function UploadBox({ type, multiple }) {
+    const inputRef = useRef(null);
+
+    // 把文件列表交给你原有的处理函数
+    const forwardFiles = (fileList) => {
+      const evt = { target: { files: fileList } };
+      multiple
+        ? handleMultipleFilesUpload(evt, type)
+        : handleSingleFileUpload(evt, type);
+    };
+
+    // 允许哪些扩展名
+    const accept =
+      type === 'script'
+        ? '.py,.exe'
+        : '.csv,.txt,.jpg,.png,.zip,.rar,.json,.jsonl';
+
+    return (
+      <div className="mb-4">
+        <div
+          className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg text-sm text-gray-500 cursor-pointer hover:border-blue-500"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length) forwardFiles(e.dataTransfer.files);
+          }}
+        >
+          <span className="mb-1">拖拽文件到此处</span>
+          <span className="mb-1">或点击选择</span>
+          {/* 隐藏的原生 input */}
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            multiple={multiple}
+            className="hidden"
+            onChange={(e) => e.target.files && forwardFiles(e.target.files)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+
   const renderFiles = (files) => {
     return (
       <div className="flex flex-wrap gap-2">
@@ -193,72 +239,126 @@ export default function TrainingPage() {
     );
   };
 
-  const renderContent = () => {
-    switch (tab) {
-      case "uploadScript":
-        return (
-          <div>
-            <h2 className="text-xl font-bold mb-4">上传训练脚本</h2>
-            <div className="mb-4">
-              <label className="block font-semibold">单文件上传</label>
-              <input
-                type="file"
-                onClick={() => clearOutput("script")}
-                onChange={(e) => handleSingleFileUpload(e, "script")}
-                className="block mb-2"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block font-semibold">多文件上传</label>
-              <input
-                type="file"
-                multiple
-                onClick={() => clearOutput("script")}
-                onChange={(e) => handleMultipleFilesUpload(e, "script")}
-                className="block"
-              />
-            </div>
-            <div className="mb-4 text-sm text-gray-600">{scriptCount} files</div>
-            <div className="overflow-auto max-h-[400px]">{renderFiles(uploadedScripts)}</div>
-          </div>
-        );
-      case "uploadData":
-        return (
-          <div>
-            <h2 className="text-xl font-bold mb-4">上传训练数据</h2>
-            <div className="mb-4">
-              <label className="block font-semibold">单文件上传</label>
-              <input
-                type="file"
-                onClick={() => clearOutput("data")}
-                onChange={(e) => handleSingleFileUpload(e, "data")}
-                className="block mb-2"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block font-semibold">多文件上传</label>
-              <input
-                type="file"
-                multiple
-                onClick={() => clearOutput("data")}
-                onChange={(e) => handleMultipleFilesUpload(e, "data")}
-                className="block"
-              />
-            </div>
-            <div className="mb-4 text-sm text-gray-600">{dataCount} files</div>
-            <div className="overflow-auto max-h-[400px]">{renderFiles(uploadedData)}</div>
-          </div>
-        );
-      default:
-        return <p>请选择一个功能。</p>;
-    }
-  };
+//   const renderContent = () => {
+//     switch (tab) {
+//       case "uploadScript":
+//         return (
+//           <div>
+//             <h2 className="text-xl font-bold mb-4">上传训练脚本</h2>
+//             <div className="mb-4">
+//               <label className="block font-semibold">单文件上传</label>
+//               <input
+//                 type="file"
+//                 onClick={() => clearOutput("script")}
+//                 onChange={(e) => handleSingleFileUpload(e, "script")}
+//                 className="block mb-2"
+//               />
+//             </div>
+//             <div className="mb-4">
+//               <label className="block font-semibold">多文件上传</label>
+//               <input
+//                 type="file"
+//                 multiple
+//                 onClick={() => clearOutput("script")}
+//                 onChange={(e) => handleMultipleFilesUpload(e, "script")}
+//                 className="block"
+//               />
+//             </div>
+//             <div className="mb-4 text-sm text-gray-600">{scriptCount} files</div>
+//             <div className="overflow-auto max-h-[400px]">{renderFiles(uploadedScripts)}</div>
+//           </div>
+//         );
+//       case "uploadData":
+//         return (
+//           <div>
+//             <h2 className="text-xl font-bold mb-4">上传训练数据</h2>
+//             <div className="mb-4">
+//               <label className="block font-semibold">单文件上传</label>
+//               <input
+//                 type="file"
+//                 onClick={() => clearOutput("data")}
+//                 onChange={(e) => handleSingleFileUpload(e, "data")}
+//                 className="block mb-2"
+//               />
+//             </div>
+//             <div className="mb-4">
+//               <label className="block font-semibold">多文件上传</label>
+//               <input
+//                 type="file"
+//                 multiple
+//                 onClick={() => clearOutput("data")}
+//                 onChange={(e) => handleMultipleFilesUpload(e, "data")}
+//                 className="block"
+//               />
+//             </div>
+//             <div className="mb-4 text-sm text-gray-600">{dataCount} files</div>
+//             <div className="overflow-auto max-h-[400px]">{renderFiles(uploadedData)}</div>
+//           </div>
+//         );
+//       default:
+//         return <p>请选择一个功能。</p>;
+//     }
+//   };
 
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">训练管理</h1>
-      {uploadMessage && <div className="mb-4 text-blue-600 text-sm">{uploadMessage}</div>}
-      {renderContent()}
-    </div>
-  );
+//   return (
+//     <div className="p-4">
+//       <h1 className="text-2xl font-bold mb-4">训练管理</h1>
+//       {uploadMessage && <div className="mb-4 text-blue-600 text-sm">{uploadMessage}</div>}
+//       {renderContent()}
+//     </div>
+//   );
+// }
+const renderContent = () => {
+  switch (tab) {
+    case 'uploadScript':
+      return (
+        <div>
+          <h2 className="text-xl font-bold mb-4">上传训练脚本</h2>
+
+          <label className="block font-semibold">单文件上传</label>
+          <UploadBox type="script" multiple={false} />
+
+          <label className="block font-semibold">多文件上传</label>
+          <UploadBox type="script" multiple />
+
+          <div className="mb-4 text-sm text-gray-600">{scriptCount} files</div>
+          <div className="overflow-auto max-h-[400px]">
+            {renderFiles(uploadedScripts)}
+          </div>
+        </div>
+      );
+
+    case 'uploadData':
+      return (
+        <div>
+          <h2 className="text-xl font-bold mb-4">上传训练数据</h2>
+
+          <label className="block font-semibold">单文件上传</label>
+          <UploadBox type="data" multiple={false} />
+
+          <label className="block font-semibold">多文件上传</label>
+          <UploadBox type="data" multiple />
+
+          <div className="mb-4 text-sm text-gray-600">{dataCount} files</div>
+          <div className="overflow-auto max-h-[400px]">
+            {renderFiles(uploadedData)}
+          </div>
+        </div>
+      );
+
+    default:
+      return <p>请选择一个功能。</p>;
+  }
+};
+
+/* --------------- 页面主体 --------------- */
+return (
+  <div className="p-4">
+    <h1 className="text-2xl font-bold mb-4">训练管理</h1>
+    {uploadMessage && (
+      <div className="mb-4 text-blue-600 text-sm">{uploadMessage}</div>
+    )}
+    {renderContent()}
+  </div>
+);
 }

@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import DateCell from "@/components/datecell";// 统一时间格式 chrome环境和edge如果语言地区不一样会有差别
 import { Button } from "@/components/ui/button";
+import DateCell from "@/components/datecell";// 统一时间格式
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export default function DataUploadPage() {
@@ -15,8 +14,10 @@ export default function DataUploadPage() {
   const [pendingDescriptions, setPendingDescriptions] = useState({});
   const [deletedFileIds, setDeletedFileIds] = useState([]);
 
-
+  // 获取上传记录
   useEffect(() => {
+    // const now = new Date().toLocaleString();
+    // console.log(`[${now}] 发起加载上传记录请求`);
     fetch("/api/protected/uploads",
         {
             method: "GET",
@@ -27,6 +28,9 @@ export default function DataUploadPage() {
     )
       .then(res => res.json())
       .then(data => {
+        const now = new Date().toLocaleString();
+        console.log(`[${now}] 成功获取上传记录数据，共${(data.data || []).length}条`);
+
         const items = data.data || [];
         setUploads(items);
   
@@ -38,6 +42,7 @@ export default function DataUploadPage() {
       });
   }, []);
 
+  // 当开始编辑时，初始化待修改的数据
   useEffect(() => {
     if (isEditing) {
       setPendingUploads(uploads.map(item => ({ ...item })));
@@ -46,77 +51,88 @@ export default function DataUploadPage() {
     }
   }, [isEditing]);
 
-  const handleSaveAll = async () => {
-    // 保存描述和启用状态
-    // for (const fileId in pendingDescriptions) // PATCH部分更新
-    //   if (!deletedFileIds.includes(fileId))  {
-    //     await fetch(`/api/protected/uploads/${fileId}/description`, {
-    //       method: "PATCH",
-    //       headers: { 
-    //         "Content-Type": "application/json",
-    //         Authorization: `Bearer ${localStorage.getItem("token")}`,
-    //       },
-    //       body: JSON.stringify({ description: pendingDescriptions[fileId] }),
-    //   });
-    // }
+  // 处理字段变化
+  const handleChange = (field, item, value) => {
+    setPendingUploads(prev => 
+      prev.map(i =>
+        i.file_id === item.file_id ? { ...i, [field]: value } : i
+      )
+    );
+    
+    // 如果是描述字段，也更新 pendingDescriptions
+    if (field === "description") {
+      setPendingDescriptions(prev => ({
+        ...prev,
+        [item.file_id]: value,
+      }));
+    }
+  };
 
-    // for (const item of pendingUploads)
-    //   if (!deletedFileIds.includes(item.file_id)) {
-    //     await fetch(`/api/protected/uploads/${item.file_id}/enable`, {
-    //       method: "PATCH",
-    //       headers: { 
-    //         "Content-Type": "application/json",
-    //         Authorization: `Bearer ${localStorage.getItem("token")}`,
-    //       },
-    //       body: JSON.stringify({ is_enabled: item.is_enabled }),
-    //   });
-    // }
-    for (const item of pendingUploads) {
-      if (!deletedFileIds.includes(item.file_id)) {
+  // 保存修改
+  const handleSaveAll = async () => {
+    // 只保存修改过的行
+    const updatedItems = pendingUploads.filter(item => {
+      // 比较原始数据和修改后的数据
+      const original = uploads.find(i => i.file_id === item.file_id);
+      return (
+        (item.description !== original.description) ||
+        (item.is_enabled !== original.is_enabled)
+      );
+    });
+
+    for (const item of updatedItems) {
+      const patchData = {};
+
+      // 只发送修改过的字段
+      if (pendingDescriptions[item.file_id] !== descriptions[item.file_id]) {
+        patchData.description = pendingDescriptions[item.file_id];
+      }
+
+      if (item.is_enabled !== uploads.find(i => i.file_id === item.file_id).is_enabled) {
+        patchData.is_enabled = item.is_enabled;
+      }
+
+      // 如果有修改，发送请求
+      if (Object.keys(patchData).length > 0) {
         await fetch(`/api/protected/uploads/${item.file_id}`, {
           method: "PATCH",
           headers: { 
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({
-            description: pendingDescriptions[item.file_id],
-            is_enabled: item.is_enabled,
-          }),
+          body: JSON.stringify(patchData),
         });
       }
     }
 
     // 删除已标记的项
     for (const fileId of deletedFileIds) {
-      await fetch(`/api/protected/uploads/${fileId}/delete`, {
+      await fetch(`/api/protected/uploads/${fileId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
+        },
       });
     }
-    
+
     // 刷新页面
     window.location.reload();
-    // setUploads(pendingUploads);
-    // setDescriptions(pendingDescriptions);
-    // setIsEditing(false);
-
   };
 
+  // 取消编辑
   const handleCancel = () => {
     setIsEditing(false);
   };
 
-//   const list = isEditing ? pendingUploads : uploads;
-    const list = isEditing
+  // 渲染列表数据
+  const list = isEditing
     ? pendingUploads.filter(item => !deletedFileIds.includes(item.file_id))
     : uploads;
 
-    const markForDelete = (fileId) => {
+  // 标记删除
+  const markForDelete = (fileId) => {
     setDeletedFileIds(prev => [...prev, fileId]);
-    };
+  };
 
   return (
     <div className="p-6">
@@ -163,44 +179,25 @@ export default function DataUploadPage() {
                   checked={item.is_enabled}
                   disabled={!isEditing}
                   className="data-[state=checked]:bg-green-500"
-                  // onCheckedChange={() => toggleEnabled(item.file_id, item.is_enabled)}
                   onCheckedChange={(checked) => {
                     if (!isEditing) return;
-                    setPendingUploads(prev =>
-                      prev.map(i =>
-                        i.file_id === item.file_id ? { ...i, is_enabled: checked } : i
-                      )
-                    );
+                    handleChange("is_enabled", item, checked);
                   }}
                 />
               </td>
              <td className="p-2 align-top w-64">
             <textarea
                 disabled={!isEditing}
-                value={
-                isEditing
-                    ? pendingDescriptions[item.file_id] ?? ""
-                    : descriptions[item.file_id] ?? ""
-                }
+                value={isEditing ? pendingDescriptions[item.file_id] ?? "" : descriptions[item.file_id] ?? ""}
                 onChange={(e) => {
-                if (!isEditing) return;
-                setPendingDescriptions({
-                    ...pendingDescriptions,
-                    [item.file_id]: e.target.value,
-                });
+                  if (!isEditing) return;
+                  handleChange("description", item, e.target.value);
                 }}
                 className={`w-full resize-none rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50
-                ${isEditing ? "whitespace-pre-wrap" : "overflow-hidden text-ellipsis whitespace-nowrap"}
-                `}
+                ${isEditing ? "whitespace-pre-wrap" : "overflow-hidden text-ellipsis whitespace-nowrap"}`}
                 rows={1}
-                style={{
-                lineHeight: "1.4",
-                minHeight: "2rem",
-                maxHeight: "6rem",
-                }}
-            />
+              />
             </td>
-
             <td className="p-2"><DateCell value={item.created_at} /></td>
             <td className="p-2"><DateCell value={item.updated_at} /></td>
             </tr>
@@ -235,8 +232,7 @@ export default function DataUploadPage() {
           </>
         )}
       </div>
-
     </div>
   );
-  // 
 }
+

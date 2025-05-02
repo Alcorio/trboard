@@ -72,7 +72,7 @@ export default function Login() {
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
       <div className="bg-white p-6 rounded shadow-md">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
+        <h1 className="text-2xl font-bold mb-4">Trboard</h1>
         <div className="mb-4">
           <input
             type="text"

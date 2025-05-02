@@ -2,3 +2,6 @@ database:
   dsn: "postgres://postgres:123456@localhost:5432/trboardb?sslmode=disable"
 basedir: "F:/workspace/trboard"
 uploadir: "F:/workspace/trboard/tmp/uploads"
+outputdir: "F:/workspace/trboard/tmp/output"
+batchsize: 2000 # 索引化时批量插入的大小
+readsize:  262144 # 256kb

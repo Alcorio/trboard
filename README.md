@@ -49,7 +49,28 @@ go run main.go
 
   <img src="./pics/uploaddata.png" style="zoom:50%;" />
 
+* 脚本执行
+<img src="./pics/runscript.png" style="zoom:50%;" />
+<img src="./pics/runscript_ans.png" style="zoom:50%;" />
+* 上传管理
+<img src="./pics/uploadmanage.png" style="zoom:50%;" />
+<img src="./pics/uploadmanage1.png" style="zoom:50%;" />
 
+ * 样本选择
+ <img src="./pics/sample_select.png" style="zoom:50%;" />
+ * 数据分布可视化
+  <img src="./pics/distribution.png" style="zoom:50%;" />
+* 训练过程指标可视化
+  <img src="./pics/accuracy_1.png" style="zoom:50%;" />
+  <img src="./pics/accuracy_2.png" style="zoom:50%;" />
+* 贡献度
+  <img src="./pics/contribution_1.png" style="zoom:50%;" />
+  <img src="./pics/contribution_2.png" style="zoom:50%;" />
+  <img src="./pics/contribution_3.png" style="zoom:50%;" />
+* 离群度
+  <img src="./pics/scd_1.png" style="zoom:50%;" />
+  <img src="./pics/scd_2.png" style="zoom:50%;" />
+  <img src="./pics/scd_3.png" style="zoom:50%;" />
 
 # 可能存在的问题
 

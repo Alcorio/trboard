@@ -90,7 +90,8 @@ func initDBSchema(db *sql.DB) {
 		path            TEXT NOT NULL,
 		is_enabled      BOOLEAN DEFAULT false,
 		created_at      TIMESTAMP,
-		updated_at      TIMESTAMP
+		updated_at      TIMESTAMP,
+		is_index        BOOLEAN DEFAULT false
 	);
 	`
 	if _, err := db.Exec(query_uploads); err != nil {
@@ -103,6 +104,57 @@ func initDBSchema(db *sql.DB) {
 		log.Fatalf("添加新列失败:%v", err)
 	}
 
+	_, err = db.Exec(`ALTER TABLE uploads ADD COLUMN IF NOT EXISTS is_index BOOLEAN DEFAULT false;`) // 单引号优于双引号 后者还需要转义
+	if err != nil {
+		log.Fatalf("添加新列失败:%v", err)
+	}
+
+	query_samples := `
+	CREATE TABLE IF NOT EXISTS samples (
+		id              SERIAL PRIMARY KEY,
+		file_id UUID    DEFAULT gen_random_uuid(),
+		sample_id       TEXT,
+		Path            BIGINT NOT NULL, 
+		contribution    FLOAT,
+		outlier         FLOAT,
+    	label 			TEXT,
+    	is_selected 	BOOLEAN DEFAULT TRUE,
+    	filter_tags 	TEXT[]
+	);
+	`
+	if _, err := db.Exec(query_samples); err != nil {
+		log.Fatalf("Failed to initialize samples table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_samples_filter_tags ON samples USING GIN (filter_tags) 
+	`) // gin "Generalized Inverted Index"（广义倒排索引）后续查询方式 SELECT * FROM samples WHERE filter_tags @> ARRAY['good'];
+	if err != nil {
+		log.Fatalf("构建索引失败:%v", err)
+	}
+
+	if err := ResetIDIfEmpty(db, "samples", "samples_id_seq"); err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+// 初始化数据库表samples的id序列，表空时再进行初始化(主要是用来测试时方便观察id),pgadmin也可以手动设置
+func ResetIDIfEmpty(db *sql.DB, tableName, sequenceName string) error {
+	var count int
+	err := db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Scan(&count)
+	if err != nil {
+		return fmt.Errorf("查询表失败: %v", err)
+	}
+
+	if count == 0 {
+		_, err := db.Exec(fmt.Sprintf("ALTER SEQUENCE %s RESTART WITH 1", sequenceName))
+		if err != nil {
+			return fmt.Errorf("重置序列失败: %v", err)
+		}
+		log.Printf("✅ 表 %s 为空，已重置自增 ID", tableName)
+	}
+	return nil
 }
 
 func GetBaseDir() string {
@@ -111,4 +163,16 @@ func GetBaseDir() string {
 
 func GetUploadir() string {
 	return viper.GetString("uploadir")
+}
+
+func GetBatchSize() int {
+	return viper.GetInt("batchsize")
+}
+
+func GetReadSize() int {
+	return viper.GetInt("readsize")
+}
+
+func GetOutputdir() string {
+	return viper.GetString("outputdir")
 }
